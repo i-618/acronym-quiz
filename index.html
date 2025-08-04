@@ -276,7 +276,6 @@
             },
             {
                 question: "M&M's 🍬",
-                // BUG FIX: Ensured the apostrophe is a standard single quote (') for consistent matching.
                 options: ["Mars & Murrie's", "Mega & Mini's", "Melt & Munch", "Magical & Marvelous"],
                 answer: "Mars & Murrie's",
                 info: "The two 'M's represent the names of Forrest Mars Sr., the founder of Mars, and Bruce Murrie, son of Hershey Chocolate's president, who had a 20% share in the product."
@@ -479,12 +478,13 @@
         function selectAnswer(selectedButton, currentQuestion) {
             Array.from(optionsContainer.children).forEach(button => {
                 button.disabled = true;
-                if (button.innerHTML === currentQuestion.answer) {
+                // BUG FIX: Use textContent for comparison to avoid HTML entity issues (e.g., '&' vs '&amp;')
+                if (button.textContent === currentQuestion.answer) {
                     button.classList.add('correct');
                 }
             });
 
-            if (selectedButton.innerHTML === currentQuestion.answer) {
+            if (selectedButton.textContent === currentQuestion.answer) {
                 score++;
                 scoreDisplay.textContent = `Score: ${score}`;
                 scoreDisplay.classList.add('pop');
