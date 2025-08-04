@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acronym Challenge: The Full Form Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: #0f0c29;
+            background: -webkit-linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            color: #e0e0e0;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .quiz-container {
+            transition: transform 0.8s, opacity 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        .card-face {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            transition: transform 0.6s;
+        }
+
+        .card-front {
+            transform: rotateY(0deg);
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        .flipped .card-front {
+            transform: rotateY(-180deg);
+        }
+
+        .flipped .card-back {
+            transform: rotateY(0deg);
+        }
+
+        .btn-glow {
+            box-shadow: 0 0 5px #00bfff, 0 0 10px #00bfff, 0 0 20px #00bfff, 0 0 40px #00bfff;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .btn-glow:hover {
+            box-shadow: 0 0 10px #00bfff, 0 0 20px #00bfff, 0 0 40px #00bfff, 0 0 80px #00bfff;
+            transform: translateY(-2px);
+        }
+        
+        .option-btn {
+            border: 2px solid #4f4f8e;
+            transition: all 0.3s ease;
+            background-color: rgba(36, 36, 62, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .option-btn:hover:not([disabled]) {
+            background-color: rgba(79, 79, 142, 0.7);
+            border-color: #00bfff;
+        }
+        
+        .option-btn.correct {
+            background-color: #28a745 !important;
+            border-color: #208338 !important;
+            color: white;
+            animation: pulse 0.5s;
+        }
+
+        .option-btn.incorrect {
+            background-color: #dc3545 !important;
+            border-color: #b02a37 !important;
+            color: white;
+            animation: shake 0.5s;
+        }
+        
+        .progress-bar-inner {
+            transition: width 0.5s ease-in-out;
+            background: linear-gradient(90deg, #00bfff, #8a2be2);
+        }
+
+        .info-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out, opacity 0.5s ease-out, padding 0.5s ease-out;
+            opacity: 0;
+        }
+
+        .info-panel.show {
+            max-height: 200px; /* Adjust as needed */
+            opacity: 1;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        
+        /* Keyframe Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 5px #28a745; }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px #28a745; }
+            100% { transform: scale(1); box-shadow: 0 0 5px #28a745; }
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100%) rotateZ(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotateZ(360deg); opacity: 0; }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0;
+            animation: confetti-fall 3s linear infinite;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="quiz-app" class="w-full max-w-2xl mx-auto">
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="text-center p-8 bg-black bg-opacity-30 rounded-2xl shadow-2xl backdrop-filter backdrop-blur-md border border-gray-700">
+            <h1 class="text-4xl md:text-5xl font-orbitron font-bold mb-4 text-cyan-300 tracking-widest">ACRONYM CHALLENGE</h1>
+            <p class="mb-8 text-lg text-gray-300">Test your knowledge of what common acronyms really stand for!</p>
+            <button id="start-btn" class="font-orbitron bg-cyan-500 text-gray-900 px-10 py-4 rounded-lg text-xl font-bold btn-glow">
+                START QUIZ
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden">
+            <div class="quiz-container">
+                <div class="relative w-full h-full">
+                    <div class="card-face card-front w-full p-6 md:p-8 bg-black bg-opacity-30 rounded-2xl shadow-2xl backdrop-filter backdrop-blur-md border border-gray-700">
+                        <!-- Progress and Score -->
+                        <div class="flex justify-between items-center mb-4">
+                            <div id="question-counter" class="font-orbitron text-cyan-300">Question 1/15</div>
+                            <div id="score" class="font-orbitron text-green-400">Score: 0</div>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-6">
+                            <div id="progress-bar" class="bg-cyan-400 h-2.5 rounded-full progress-bar-inner" style="width: 0%"></div>
+                        </div>
+
+                        <!-- Question -->
+                        <h2 id="question-text" class="text-2xl md:text-3xl font-bold mb-6 text-center min-h-[80px]">What does 'TED' stand for?</h2>
+                        
+                        <!-- Options -->
+                        <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Options will be injected by JS -->
+                        </div>
+
+                        <!-- More Info Panel -->
+                        <div id="info-panel" class="info-panel mt-4 text-center bg-gray-900 bg-opacity-50 rounded-lg p-4 border border-cyan-500/50">
+                            <h3 id="info-title" class="font-bold text-lg text-cyan-300"></h3>
+                            <p id="info-text" class="text-gray-300"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden text-center p-8 bg-black bg-opacity-30 rounded-2xl shadow-2xl backdrop-filter backdrop-blur-md border border-gray-700">
+             <h2 class="text-4xl font-orbitron font-bold mb-2 text-cyan-300">Quiz Complete!</h2>
+             <p class="text-2xl mb-4 text-white">Your Final Score:</p>
+             <div id="final-score" class="text-7xl font-orbitron font-extrabold my-6 text-green-400"></div>
+             <p id="score-message" class="text-lg mb-8 text-gray-300"></p>
+             <button id="restart-btn" class="font-orbitron bg-cyan-500 text-gray-900 px-10 py-4 rounded-lg text-xl font-bold btn-glow">
+                PLAY AGAIN
+            </button>
+        </div>
+    </div>
+    
+    <div id="confetti-container"></div>
+
+    <script>
+        const quizData = [
+            {
+                question: "TED (Talks)",
+                options: ["Technology, Education, Development", "Technology, Entertainment, Design", "Technical, Educational, Discussions", "Telling, Entertaining, Debating"],
+                answer: "Technology, Entertainment, Design",
+                info: "TED began in 1984 as a conference where Technology, Entertainment and Design converged, but today it covers almost all topics — from science to business to global issues."
+            },
+            {
+                question: "LEGO",
+                options: ["Let's Go Build", "Leg Godt (Play Well)", "Learning, Engineering, Game, Object", "Light Engagement Objects"],
+                answer: "Leg Godt (Play Well)",
+                info: "The name 'LEGO' is an abbreviation of the two Danish words 'leg godt', meaning 'play well'. It’s a fitting name for a company focused on inspiring the builders of tomorrow."
+            },
+            {
+                question: "M&M's 🍬",
+                options: ["Mars & Murrie's", "Mega & Mini's", "Melt & Munch", "Magical & Marvelous"],
+                answer: "Mars & Murrie's",
+                info: "The two 'M's represent the names of Forrest Mars Sr., the founder of Mars, and Bruce Murrie, son of Hershey Chocolate's president, who had a 20% share in the product."
+            },
+            {
+                question: "SIM (card)",
+                options: ["Standard Information Memory", "Secure Internet Module", "Subscriber Identity Module", "Single Integrated Microchip"],
+                answer: "Subscriber Identity Module",
+                info: "A SIM card securely stores the international mobile subscriber identity (IMSI) number and its related key, which are used to identify and authenticate subscribers on mobile telephony devices."
+            },
+            {
+                question: "IMAX",
+                options: ["Image Maximum", "Immersive Movie Auditorium Xperience", "International Media Art X-hibition", "Image Magnification"],
+                answer: "Image Maximum",
+                info: "IMAX is a proprietary system of high-resolution cameras, film formats, film projectors, and theaters known for having very large screens with a tall aspect ratio and steep stadium seating."
+            },
+            {
+                question: "GNU",
+                options: ["General Unix", "Global Network Utility", "GNU's Not Unix!", "Grand Unified Namespace"],
+                answer: "GNU's Not Unix!",
+                info: "This is a classic recursive acronym, a playful nod in the programmer community. The GNU Project was launched to create a complete Unix-like operating system which is free software."
+            },
+            {
+                question: "GIMP",
+                options: ["Graphical Interface for Multiple Platforms", "General Image Manipulation Program", "GNU Image Manipulation Program", "Global Imaging & Media Processor"],
+                answer: "GNU Image Manipulation Program",
+                info: "GIMP is a free and open-source raster graphics editor used for image manipulation and editing, free-form drawing, and converting between different image formats."
+            },
+            {
+                question: "JPEG",
+                options: ["Joint Photo Experts Group", "Java Picture Encoding Graphics", "Joint Photographic Experts Group", "Just Picture Encoding Guide"],
+                answer: "Joint Photographic Experts Group",
+                info: "It's the name of the committee that created the standard for this common image compression format. JPEG is the most common image format used by digital cameras and other photographic image capture devices."
+            },
+            {
+                question: "GIF",
+                options: ["Graphics Interchange Format", "Graphical Image File", "Global Imaging Format", "General Interchange File"],
+                answer: "Graphics Interchange Format",
+                info: "The GIF format supports up to 8 bits per pixel for each image, allowing a single image to reference its own palette of up to 256 different colors chosen from the 24-bit RGB color space."
+            },
+            {
+                question: "CAPTCHA",
+                options: ["Captured Automated Turing Challenge", "Completely Automated Public Turing test to tell Computers and Humans Apart", "Computer Aided Personal Turing Check", "Challenge to Authenticate People"],
+                answer: "Completely Automated Public Turing test to tell Computers and Humans Apart",
+                info: "CAPTCHAs are used to determine whether or not the user is human, to prevent bots from automatically filling out forms, creating accounts, or other malicious activities."
+            },
+            {
+                question: "USB",
+                options: ["Unified Serial Bus", "Universal System Bus", "Universal Serial Bus", "User System Backup"],
+                answer: "Universal Serial Bus",
+                info: "USB was designed to standardize the connection of peripherals to personal computers, both to communicate and to supply electric power. It has become commonplace on a wide range of devices."
+            },
+            {
+                question: "TASER",
+                options: ["Thomas A. Swift's Electric Rifle", "Trauma And Shock Electrical Response", "Targeted Active Shock Emitter", "Tactical Advanced Stun Emitter"],
+                answer: "Thomas A. Swift's Electric Rifle",
+                info: "The inventor, Jack Cover, named it after his childhood hero Tom Swift from the book 'Tom Swift and His Electric Rifle'. It's an example of an acronym derived from a work of fiction."
+            },
+            {
+                question: "YAHOO!",
+                options: ["Yet Another Hierarchical Officious Oracle", "You Always Have Other Options!", "Your Access to Helpful Online Objects", "Yet Another Hyperlinked Online Outlet"],
+                answer: "Yet Another Hierarchical Officious Oracle",
+                info: "The founders, Jerry Yang and David Filo, jokingly chose this name because they considered themselves yahoos (in the sense of 'rude, unsophisticated, uncouth')."
+            },
+            {
+                question: "SCUBA",
+                options: ["Submersible Craft for Underwater Breathing Apparatus", "Self-Contained Underwater Breathing Apparatus", "Sub-aquatic Contained Breathing Apparatus", "Sealed Container for Underwater Breathing Air"],
+                answer: "Self-Contained Underwater Breathing Apparatus",
+                info: "The term was coined in 1952 by Major Christian J. Lambertsen, who served in the U.S. Army Medical Corps. It refers to any breathing apparatus that is entirely carried by the diver."
+            },
+            {
+                question: "RADAR",
+                options: ["Radio And Directional Ranging", "Radio Detection And Ranging", "Ranging And Detection Array of Radio", "Radiation And Directional Array"],
+                answer: "Radio Detection And Ranging",
+                info: "RADAR is an object-detection system that uses radio waves to determine the range, angle, or velocity of objects. It can be used to detect aircraft, ships, spacecraft, guided missiles, and more."
+            }
+        ];
+
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        const questionCounter = document.getElementById('question-counter');
+        const scoreDisplay = document.getElementById('score');
+        const progressBar = document.getElementById('progress-bar');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        
+        const infoPanel = document.getElementById('info-panel');
+        const infoTitle = document.getElementById('info-title');
+        const infoText = document.getElementById('info-text');
+
+        const finalScoreDisplay = document.getElementById('final-score');
+        const scoreMessageDisplay = document.getElementById('score-message');
+        const confettiContainer = document.getElementById('confetti-container');
+
+        // Quiz State
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let questions = [];
+
+        // --- Event Listeners ---
+        startBtn.addEventListener('click', startQuiz);
+        restartBtn.addEventListener('click', () => {
+            // A little flourish before restarting
+            resultScreen.style.animation = 'fadeOut 0.5s forwards';
+            setTimeout(() => {
+                resultScreen.classList.add('hidden');
+                resultScreen.style.animation = '';
+                startScreen.classList.remove('hidden');
+                startScreen.style.animation = 'fadeIn 0.5s';
+            }, 500);
+        });
+
+        // --- Functions ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startQuiz() {
+            startScreen.style.animation = 'fadeOut 0.5s forwards';
+            setTimeout(() => {
+                startScreen.classList.add('hidden');
+                startScreen.style.animation = '';
+                
+                // Reset and setup quiz
+                currentQuestionIndex = 0;
+                score = 0;
+                questions = shuffleArray([...quizData]); // Use a shuffled copy
+                scoreDisplay.textContent = `Score: 0`;
+                
+                quizScreen.classList.remove('hidden');
+                quizScreen.style.animation = 'fadeIn 1s';
+                showQuestion();
+            }, 500);
+        }
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = questions[currentQuestionIndex];
+            
+            // Update UI
+            progressBar.style.width = `${((currentQuestionIndex) / questions.length) * 100}%`;
+            questionCounter.textContent = `Question ${currentQuestionIndex + 1}/${questions.length}`;
+            questionText.textContent = `What does '${currentQuestion.question}' stand for?`;
+
+            // Create and display options
+            const shuffledOptions = shuffleArray([...currentQuestion.options]);
+            shuffledOptions.forEach(option => {
+                const button = document.createElement('button');
+                button.innerHTML = option;
+                button.classList.add('option-btn', 'w-full', 'p-4', 'rounded-lg', 'text-lg', 'text-left');
+                button.addEventListener('click', () => selectAnswer(button, currentQuestion));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function selectAnswer(selectedButton, currentQuestion) {
+            // Disable all buttons to prevent multiple answers
+            Array.from(optionsContainer.children).forEach(button => {
+                button.disabled = true;
+                // Reveal the correct answer
+                if (button.innerHTML === currentQuestion.answer) {
+                    button.classList.add('correct');
+                }
+            });
+
+            // Mark the user's choice
+            if (selectedButton.innerHTML === currentQuestion.answer) {
+                score++;
+                scoreDisplay.textContent = `Score: ${score}`;
+                selectedButton.classList.add('correct');
+            } else {
+                selectedButton.classList.add('incorrect');
+            }
+            
+            // Show the info panel
+            infoTitle.textContent = `${currentQuestion.question}: ${currentQuestion.answer}`;
+            infoText.textContent = currentQuestion.info;
+            infoPanel.classList.add('show');
+
+            // Move to the next question after a delay
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    showQuestion();
+                } else {
+                    endQuiz();
+                }
+            }, 4000); // 4-second delay to read the info
+        }
+
+        function resetState() {
+            // Clear previous question's elements and styles
+            while (optionsContainer.firstChild) {
+                optionsContainer.removeChild(optionsContainer.firstChild);
+            }
+            infoPanel.classList.remove('show');
+            infoTitle.textContent = '';
+            infoText.textContent = '';
+        }
+
+        function endQuiz() {
+            progressBar.style.width = '100%';
+            quizScreen.style.animation = 'fadeOut 0.5s forwards';
+            setTimeout(() => {
+                quizScreen.classList.add('hidden');
+                quizScreen.style.animation = '';
+                
+                // Show results
+                resultScreen.classList.remove('hidden');
+                resultScreen.style.animation = 'fadeIn 0.5s';
+                finalScoreDisplay.textContent = `${score}/${questions.length}`;
+                
+                const percentage = (score / questions.length) * 100;
+                let message = '';
+                if (percentage === 100) {
+                    message = "Perfect Score! You're an acronym master!";
+                    triggerConfetti();
+                } else if (percentage >= 75) {
+                    message = "Excellent job! You know your stuff.";
+                    triggerConfetti();
+                } else if (percentage >= 50) {
+                    message = "Good effort! A solid performance.";
+                } else {
+                    message = "You learned something new today! Keep trying.";
+                }
+                scoreMessageDisplay.textContent = message;
+
+            }, 500);
+        }
+
+        function triggerConfetti() {
+            confettiContainer.innerHTML = '';
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                const colors = ['#00bfff', '#ff4757', '#2ed573', '#ffa502', '#8a2be2'];
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confettiContainer.appendChild(confetti);
+            }
+            setTimeout(() => confettiContainer.innerHTML = '', 4000);
+        }
+
+    </script>
+</body>
+</html>
