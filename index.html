@@ -3,61 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acronym Challenge: The Full Form Quiz</title>
+    <title>Acronym Challenge v3: The Full Form Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400&display=swap" rel="stylesheet">
     <style>
         /* Custom Styles */
+        :root {
+            --glow-color: #00bfff;
+            --primary-bg: #0f0c29;
+            --secondary-bg: #302b63;
+            --tertiary-bg: #24243e;
+        }
+
         body {
             font-family: 'Roboto', sans-serif;
-            background: #0f0c29;
-            background: -webkit-linear-gradient(to right, #24243e, #302b63, #0f0c29);
-            background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            background-color: var(--primary-bg);
             color: #e0e0e0;
             overflow: hidden;
-            perspective: 1000px;
+            perspective: 1500px;
+        }
+
+        /* Animated Starfield & Grid Background */
+        #background-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(to right, var(--tertiary-bg), var(--secondary-bg), var(--primary-bg));
+        }
+
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: move-star linear infinite;
+        }
+        
+        #grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background-image:
+                linear-gradient(to right, rgba(0, 191, 255, 0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 191, 255, 0.2) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: pan-grid 20s linear infinite;
+            opacity: 0.5;
         }
 
         .font-orbitron {
             font-family: 'Orbitron', sans-serif;
         }
 
-        .quiz-container {
-            transition: transform 0.8s, opacity 0.8s;
-            transform-style: preserve-3d;
+        #quiz-app {
+            animation: float 6s ease-in-out infinite;
         }
-
-        .card-face {
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            transition: transform 0.6s;
-        }
-
-        .card-front {
-            transform: rotateY(0deg);
-        }
-
-        .card-back {
-            transform: rotateY(180deg);
-        }
-
-        .flipped .card-front {
-            transform: rotateY(-180deg);
-        }
-
-        .flipped .card-back {
-            transform: rotateY(0deg);
+        
+        .main-card {
+             background-color: rgba(15, 12, 41, 0.6);
+             backdrop-filter: blur(10px);
+             border: 1px solid rgba(0, 191, 255, 0.2);
         }
 
         .btn-glow {
-            box-shadow: 0 0 5px #00bfff, 0 0 10px #00bfff, 0 0 20px #00bfff, 0 0 40px #00bfff;
+            box-shadow: 0 0 5px var(--glow-color), 0 0 10px var(--glow-color), 0 0 20px var(--glow-color);
             transition: all 0.3s ease-in-out;
         }
 
         .btn-glow:hover {
-            box-shadow: 0 0 10px #00bfff, 0 0 20px #00bfff, 0 0 40px #00bfff, 0 0 80px #00bfff;
+            box-shadow: 0 0 10px var(--glow-color), 0 0 20px var(--glow-color), 0 0 40px var(--glow-color);
             transform: translateY(-2px);
         }
         
@@ -65,31 +85,35 @@
             border: 2px solid #4f4f8e;
             transition: all 0.3s ease;
             background-color: rgba(36, 36, 62, 0.5);
-            backdrop-filter: blur(5px);
+            transform: translateY(50px);
+            opacity: 0;
+            animation: fly-in 0.5s forwards;
         }
 
         .option-btn:hover:not([disabled]) {
             background-color: rgba(79, 79, 142, 0.7);
-            border-color: #00bfff;
+            border-color: var(--glow-color);
+            transform: translateY(-2px) scale(1.02);
         }
         
         .option-btn.correct {
             background-color: #28a745 !important;
             border-color: #208338 !important;
             color: white;
-            animation: pulse 0.5s;
+            animation: pulse 0.5s, fly-in 0.5s forwards;
         }
 
         .option-btn.incorrect {
             background-color: #dc3545 !important;
             border-color: #b02a37 !important;
             color: white;
-            animation: shake 0.5s;
+            animation: shake 0.5s, fly-in 0.5s forwards;
         }
         
         .progress-bar-inner {
             transition: width 0.5s ease-in-out;
-            background: linear-gradient(90deg, #00bfff, #8a2be2);
+            background: linear-gradient(90deg, var(--glow-color), #8a2be2);
+            box-shadow: 0 0 5px var(--glow-color), 0 0 10px var(--glow-color);
         }
 
         .info-panel {
@@ -100,51 +124,88 @@
         }
 
         .info-panel.show {
-            max-height: 200px; /* Adjust as needed */
+            max-height: 200px;
             opacity: 1;
             padding-top: 1rem;
             padding-bottom: 1rem;
         }
+
+        #score.pop {
+            animation: score-pop 0.3s ease-in-out;
+        }
         
-        /* Keyframe Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        #next-btn.pulse {
+            animation: pulse-glow 1.5s infinite;
         }
 
+        /* Keyframe Animations */
+        @keyframes move-star {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-100vh); }
+        }
+        @keyframes pan-grid {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-50px, -50px); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(-20px) scale(0.95); }
+        }
+        @keyframes fly-in {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-5px); }
             40%, 80% { transform: translateX(5px); }
         }
-
         @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 5px #28a745; }
-            50% { transform: scale(1.05); box-shadow: 0 0 20px #28a745; }
-            100% { transform: scale(1); box-shadow: 0 0 5px #28a745; }
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
-
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 5px #8a2be2, 0 0 10px #8a2be2; }
+            50% { box-shadow: 0 0 20px #8a2be2, 0 0 40px #8a2be2; }
+            100% { box-shadow: 0 0 5px #8a2be2, 0 0 10px #8a2be2; }
+        }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        @keyframes score-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); color: #2ed573; }
+            100% { transform: scale(1); }
+        }
         @keyframes confetti-fall {
             0% { transform: translateY(-100%) rotateZ(0deg); opacity: 1; }
             100% { transform: translateY(100vh) rotateZ(360deg); opacity: 0; }
         }
-
         .confetti {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #f00;
-            opacity: 0;
-            animation: confetti-fall 3s linear infinite;
+            position: absolute; width: 10px; height: 10px; background-color: #f00; opacity: 0; animation: confetti-fall 3s linear infinite;
         }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
+    <div id="background-wrapper">
+        <div id="stars-container"></div>
+        <div id="grid-overlay"></div>
+    </div>
+
     <div id="quiz-app" class="w-full max-w-2xl mx-auto">
 
         <!-- Start Screen -->
-        <div id="start-screen" class="text-center p-8 bg-black bg-opacity-30 rounded-2xl shadow-2xl backdrop-filter backdrop-blur-md border border-gray-700">
+        <div id="start-screen" class="main-card text-center p-8 rounded-2xl shadow-2xl">
             <h1 class="text-4xl md:text-5xl font-orbitron font-bold mb-4 text-cyan-300 tracking-widest">ACRONYM CHALLENGE</h1>
             <p class="mb-8 text-lg text-gray-300">Test your knowledge of what common acronyms really stand for!</p>
             <button id="start-btn" class="font-orbitron bg-cyan-500 text-gray-900 px-10 py-4 rounded-lg text-xl font-bold btn-glow">
@@ -154,41 +215,42 @@
 
         <!-- Quiz Screen -->
         <div id="quiz-screen" class="hidden">
-            <div class="quiz-container">
-                <div class="relative w-full h-full">
-                    <div class="card-face card-front w-full p-6 md:p-8 bg-black bg-opacity-30 rounded-2xl shadow-2xl backdrop-filter backdrop-blur-md border border-gray-700">
-                        <!-- Progress and Score -->
-                        <div class="flex justify-between items-center mb-4">
-                            <div id="question-counter" class="font-orbitron text-cyan-300">Question 1/15</div>
-                            <div id="score" class="font-orbitron text-green-400">Score: 0</div>
-                        </div>
-                        <div class="w-full bg-gray-700 rounded-full h-2.5 mb-6">
-                            <div id="progress-bar" class="bg-cyan-400 h-2.5 rounded-full progress-bar-inner" style="width: 0%"></div>
-                        </div>
+            <div class="main-card w-full p-6 md:p-8 rounded-2xl shadow-2xl">
+                <!-- Progress and Score -->
+                <div class="flex justify-between items-center mb-4">
+                    <div id="question-counter" class="font-orbitron text-cyan-300">Question 1/15</div>
+                    <div id="score" class="font-orbitron text-green-400 text-xl">Score: 0</div>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mb-6">
+                    <div id="progress-bar" class="bg-cyan-400 h-2.5 rounded-full progress-bar-inner" style="width: 0%"></div>
+                </div>
 
-                        <!-- Question -->
-                        <h2 id="question-text" class="text-2xl md:text-3xl font-bold mb-6 text-center min-h-[80px]">What does 'TED' stand for?</h2>
-                        
-                        <!-- Options -->
-                        <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Options will be injected by JS -->
-                        </div>
+                <!-- Question -->
+                <h2 id="question-text" class="text-2xl md:text-3xl font-bold mb-6 text-center min-h-[80px] border-r-2 border-transparent"></h2>
+                
+                <!-- Options -->
+                <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
 
-                        <!-- More Info Panel -->
-                        <div id="info-panel" class="info-panel mt-4 text-center bg-gray-900 bg-opacity-50 rounded-lg p-4 border border-cyan-500/50">
-                            <h3 id="info-title" class="font-bold text-lg text-cyan-300"></h3>
-                            <p id="info-text" class="text-gray-300"></p>
-                        </div>
-                    </div>
+                <!-- More Info Panel -->
+                <div id="info-panel" class="info-panel mt-4 text-center bg-gray-900 bg-opacity-50 rounded-lg p-4 border border-cyan-500/50">
+                    <h3 id="info-title" class="font-bold text-lg text-cyan-300"></h3>
+                    <p id="info-text" class="text-gray-300"></p>
+                </div>
+                
+                <!-- Next Button -->
+                <div class="mt-6 text-center">
+                    <button id="next-btn" class="hidden font-orbitron bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-bold">
+                        Next &rarr;
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Result Screen -->
-        <div id="result-screen" class="hidden text-center p-8 bg-black bg-opacity-30 rounded-2xl shadow-2xl backdrop-filter backdrop-blur-md border border-gray-700">
+        <div id="result-screen" class="hidden main-card text-center p-8 rounded-2xl shadow-2xl">
              <h2 class="text-4xl font-orbitron font-bold mb-2 text-cyan-300">Quiz Complete!</h2>
              <p class="text-2xl mb-4 text-white">Your Final Score:</p>
-             <div id="final-score" class="text-7xl font-orbitron font-extrabold my-6 text-green-400"></div>
+             <div id="final-score" class="text-7xl font-orbitron font-extrabold my-6 text-green-400">0/15</div>
              <p id="score-message" class="text-lg mb-8 text-gray-300"></p>
              <button id="restart-btn" class="font-orbitron bg-cyan-500 text-gray-900 px-10 py-4 rounded-lg text-xl font-bold btn-glow">
                 PLAY AGAIN
@@ -214,6 +276,7 @@
             },
             {
                 question: "M&M's 🍬",
+                // BUG FIX: Ensured the apostrophe is a standard single quote (') for consistent matching.
                 options: ["Mars & Murrie's", "Mega & Mini's", "Melt & Munch", "Magical & Marvelous"],
                 answer: "Mars & Murrie's",
                 info: "The two 'M's represent the names of Forrest Mars Sr., the founder of Mars, and Bruce Murrie, son of Hershey Chocolate's president, who had a 20% share in the product."
@@ -298,6 +361,7 @@
         const resultScreen = document.getElementById('result-screen');
         const startBtn = document.getElementById('start-btn');
         const restartBtn = document.getElementById('restart-btn');
+        const nextBtn = document.getElementById('next-btn');
         
         const questionCounter = document.getElementById('question-counter');
         const scoreDisplay = document.getElementById('score');
@@ -312,16 +376,20 @@
         const finalScoreDisplay = document.getElementById('final-score');
         const scoreMessageDisplay = document.getElementById('score-message');
         const confettiContainer = document.getElementById('confetti-container');
+        const starsContainer = document.getElementById('stars-container');
 
         // Quiz State
         let currentQuestionIndex = 0;
         let score = 0;
         let questions = [];
+        let typingInterval;
+
+        // --- Initial Setup ---
+        createStars(150);
 
         // --- Event Listeners ---
         startBtn.addEventListener('click', startQuiz);
         restartBtn.addEventListener('click', () => {
-            // A little flourish before restarting
             resultScreen.style.animation = 'fadeOut 0.5s forwards';
             setTimeout(() => {
                 resultScreen.classList.add('hidden');
@@ -330,14 +398,27 @@
                 startScreen.style.animation = 'fadeIn 0.5s';
             }, 500);
         });
+        nextBtn.addEventListener('click', handleNextQuestion);
 
         // --- Functions ---
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+        function createStars(count) {
+            for (let i = 0; i < count; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                const size = Math.random() * 2 + 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.top = `${Math.random() * 100}vh`;
+                star.style.left = `${Math.random() * 100}vw`;
+                const duration = Math.random() * 5 + 5;
+                star.style.animationDuration = `${duration}s`;
+                star.style.animationDelay = `${Math.random() * 5}s`;
+                starsContainer.appendChild(star);
             }
-            return array;
+        }
+
+        function shuffleArray(array) {
+            return [...array].sort(() => Math.random() - 0.5);
         }
 
         function startQuiz() {
@@ -346,11 +427,11 @@
                 startScreen.classList.add('hidden');
                 startScreen.style.animation = '';
                 
-                // Reset and setup quiz
                 currentQuestionIndex = 0;
                 score = 0;
-                questions = shuffleArray([...quizData]); // Use a shuffled copy
+                questions = shuffleArray(quizData);
                 scoreDisplay.textContent = `Score: 0`;
+                nextBtn.classList.add('hidden');
                 
                 quizScreen.classList.remove('hidden');
                 quizScreen.style.animation = 'fadeIn 1s';
@@ -358,69 +439,102 @@
             }, 500);
         }
 
+        function typeWriter(text, element) {
+            let i = 0;
+            element.innerHTML = "";
+            element.style.borderRight = '2px solid var(--glow-color)';
+            clearInterval(typingInterval);
+            typingInterval = setInterval(() => {
+                if (i < text.length) {
+                    element.innerHTML += text.charAt(i);
+                    i++;
+                } else {
+                    clearInterval(typingInterval);
+                    element.style.borderRight = '2px solid transparent';
+                }
+            }, 30);
+        }
+
         function showQuestion() {
             resetState();
             const currentQuestion = questions[currentQuestionIndex];
             
-            // Update UI
             progressBar.style.width = `${((currentQuestionIndex) / questions.length) * 100}%`;
             questionCounter.textContent = `Question ${currentQuestionIndex + 1}/${questions.length}`;
-            questionText.textContent = `What does '${currentQuestion.question}' stand for?`;
+            
+            const fullQuestionText = `What does '${currentQuestion.question}' stand for?`;
+            typeWriter(fullQuestionText, questionText);
 
-            // Create and display options
-            const shuffledOptions = shuffleArray([...currentQuestion.options]);
-            shuffledOptions.forEach(option => {
+            const shuffledOptions = shuffleArray(currentQuestion.options);
+            shuffledOptions.forEach((option, index) => {
                 const button = document.createElement('button');
                 button.innerHTML = option;
                 button.classList.add('option-btn', 'w-full', 'p-4', 'rounded-lg', 'text-lg', 'text-left');
+                button.style.animationDelay = `${index * 0.1}s`;
                 button.addEventListener('click', () => selectAnswer(button, currentQuestion));
                 optionsContainer.appendChild(button);
             });
         }
 
         function selectAnswer(selectedButton, currentQuestion) {
-            // Disable all buttons to prevent multiple answers
             Array.from(optionsContainer.children).forEach(button => {
                 button.disabled = true;
-                // Reveal the correct answer
                 if (button.innerHTML === currentQuestion.answer) {
                     button.classList.add('correct');
                 }
             });
 
-            // Mark the user's choice
             if (selectedButton.innerHTML === currentQuestion.answer) {
                 score++;
                 scoreDisplay.textContent = `Score: ${score}`;
+                scoreDisplay.classList.add('pop');
+                setTimeout(() => scoreDisplay.classList.remove('pop'), 300);
                 selectedButton.classList.add('correct');
             } else {
                 selectedButton.classList.add('incorrect');
             }
             
-            // Show the info panel
             infoTitle.textContent = `${currentQuestion.question}: ${currentQuestion.answer}`;
             infoText.textContent = currentQuestion.info;
             infoPanel.classList.add('show');
-
-            // Move to the next question after a delay
-            setTimeout(() => {
-                currentQuestionIndex++;
-                if (currentQuestionIndex < questions.length) {
-                    showQuestion();
-                } else {
-                    endQuiz();
-                }
-            }, 4000); // 4-second delay to read the info
+            nextBtn.classList.remove('hidden');
+            nextBtn.classList.add('pulse');
+        }
+        
+        function handleNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                endQuiz();
+            }
         }
 
         function resetState() {
-            // Clear previous question's elements and styles
+            clearInterval(typingInterval);
+            nextBtn.classList.add('hidden');
+            nextBtn.classList.remove('pulse');
             while (optionsContainer.firstChild) {
                 optionsContainer.removeChild(optionsContainer.firstChild);
             }
             infoPanel.classList.remove('show');
-            infoTitle.textContent = '';
-            infoText.textContent = '';
+        }
+        
+        function animateFinalScore() {
+            let currentScore = 0;
+            const targetScore = score;
+            finalScoreDisplay.textContent = `0/${questions.length}`;
+            if (targetScore === 0) return;
+
+            const increment = targetScore / 50; // Animate over 50 steps
+            const interval = setInterval(() => {
+                currentScore += increment;
+                if (currentScore >= targetScore) {
+                    currentScore = targetScore;
+                    clearInterval(interval);
+                }
+                finalScoreDisplay.textContent = `${Math.ceil(currentScore)}/${questions.length}`;
+            }, 20);
         }
 
         function endQuiz() {
@@ -430,10 +544,10 @@
                 quizScreen.classList.add('hidden');
                 quizScreen.style.animation = '';
                 
-                // Show results
                 resultScreen.classList.remove('hidden');
                 resultScreen.style.animation = 'fadeIn 0.5s';
-                finalScoreDisplay.textContent = `${score}/${questions.length}`;
+                
+                animateFinalScore();
                 
                 const percentage = (score / questions.length) * 100;
                 let message = '';
